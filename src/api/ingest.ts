@@ -1,6 +1,7 @@
 import { EvidencePayload, Env } from "../types";
 import { errorResponse, jsonResponse } from "./responses";
 import { insertFeedback, updateFeedbackStatus } from "../db";
+import { processFeedbackInline } from "./process";
 
 const MAX_TEXT_LENGTH = 6000;
 const SNIPPET_LENGTH = 200;
@@ -70,25 +71,37 @@ export async function handleIngest(
     created_at: createdAt
   });
 
+  // Try workflow first, fallback to inline processing if it fails
   try {
     await env.FFL_WORKFLOW.start({ payload: { feedbackId } });
+    return jsonResponse({
+      id: feedbackId,
+      status: "queued"
+    }, 202);
   } catch (error) {
-    await updateFeedbackStatus(
-      env.DB,
-      feedbackId,
-      "failed",
-      "workflow_start_failed",
-      error instanceof Error ? error.message : "Workflow start failed"
-    );
-    return errorResponse(
-      "Failed to start analysis workflow",
-      500,
-      "workflow_start_failed"
-    );
+    // Fallback: process inline (synchronous) for demo purposes
+    // This allows clustering to work even if Workflows aren't configured correctly
+    // Note: This blocks the request until processing completes
+    try {
+      await processFeedbackInline(env, feedbackId);
+      return jsonResponse({
+        id: feedbackId,
+        status: "ready",
+        note: "Processed inline (workflow unavailable)"
+      }, 200);
+    } catch (fallbackError) {
+      await updateFeedbackStatus(
+        env.DB,
+        feedbackId,
+        "failed",
+        "process_failed",
+        fallbackError instanceof Error ? fallbackError.message : "Processing failed"
+      );
+      return errorResponse(
+        "Failed to process feedback",
+        500,
+        "process_failed"
+      );
+    }
   }
-
-  return jsonResponse({
-    id: feedbackId,
-    status: "queued"
-  }, 202);
 }

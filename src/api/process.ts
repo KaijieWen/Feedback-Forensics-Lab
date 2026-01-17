@@ -1,4 +1,7 @@
-import type { CaseFile, Env, EvidencePayload } from "../types";
+// Synchronous processing function (fallback when workflows don't work)
+// This mirrors the workflow logic but runs inline
+import { Env } from "../types";
+import { CaseFile, EvidencePayload } from "../types";
 import {
   ensureCluster,
   insertCaseFile,
@@ -6,73 +9,6 @@ import {
   insertSimilarityEdge,
   updateFeedbackStatus
 } from "../db";
-
-interface WorkflowEvent<T> {
-  payload: T;
-}
-
-interface WorkflowStep {
-  do: <T>(name: string, fn: () => Promise<T> | T) => Promise<T>;
-  sleep: (ms: number) => Promise<void>;
-}
-
-export class AnalyzeFeedbackWorkflow {
-  async run(
-    event: WorkflowEvent<{ feedbackId: string }>,
-    step: WorkflowStep,
-    env: Env
-  ) {
-    const feedbackId = event.payload.feedbackId;
-    try {
-      await step.do("markProcessing", async () => {
-        await updateFeedbackStatus(env.DB, feedbackId, "processing");
-      });
-
-      const evidence = await step.do("loadEvidence", async () => {
-        return await loadEvidence(env, feedbackId);
-      });
-
-      const similar = await step.do("similaritySearch", async () => {
-        return await findSimilar(env, evidence.text);
-      });
-
-      const caseFile = await step.do("generateCaseFile", async () => {
-        return await generateCaseFile(env, evidence, similar.length);
-      });
-
-      const clusterId = await step.do("assignCluster", async () => {
-        return await resolveCluster(env, caseFile, similar);
-      });
-
-      await step.do("persistResults", async () => {
-        for (const result of similar) {
-          await insertSimilarityEdge(
-            env.DB,
-            feedbackId,
-            result.id,
-            result.score
-          );
-        }
-        await insertCaseFile(env.DB, feedbackId, caseFile, clusterId);
-        await insertClusterMember(
-          env.DB,
-          clusterId,
-          feedbackId,
-          similar[0]?.score
-        );
-        await updateFeedbackStatus(env.DB, feedbackId, "ready");
-      });
-    } catch (error) {
-      await updateFeedbackStatus(
-        env.DB,
-        feedbackId,
-        "failed",
-        "workflow_error",
-        error instanceof Error ? error.message : "Workflow error"
-      );
-    }
-  }
-}
 
 async function loadEvidence(env: Env, feedbackId: string): Promise<EvidencePayload> {
   const result = await env.DB.prepare("SELECT r2_key FROM feedback WHERE id = ?")
@@ -120,45 +56,6 @@ async function findSimilar(
     .filter(Boolean) as Array<{ id: string; score?: number }>;
 }
 
-async function generateCaseFile(
-  env: Env,
-  evidence: EvidencePayload,
-  similarCount: number
-): Promise<CaseFile> {
-  const prompt = buildPrompt(evidence);
-  let attempt = 0;
-  let lastError: string | null = null;
-  while (attempt < 3) {
-    attempt += 1;
-    try {
-      const response = (await env.AI.run(
-        "@cf/meta/llama-3.1-8b-instruct",
-        {
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a product analyst. Return JSON only that matches the schema."
-            },
-            { role: "user", content: prompt }
-          ],
-          max_tokens: 700
-        }
-      )) as { response?: string };
-      const raw = typeof response?.response === "string" ? response.response : "";
-      const parsed = safeJsonParse(raw);
-      const validated = validateCaseFile(parsed, similarCount);
-      if (validated) {
-        return validated;
-      }
-      lastError = "AI output did not match schema";
-    } catch (error) {
-      lastError = error instanceof Error ? error.message : "AI error";
-    }
-  }
-  return fallbackCaseFile(evidence, similarCount, lastError ?? "AI failed");
-}
-
 function buildPrompt(evidence: EvidencePayload): string {
   return [
     "Analyze the feedback evidence below and return ONLY valid JSON matching the schema.",
@@ -194,6 +91,36 @@ function safeJsonParse(raw: string): unknown {
   } catch (error) {
     return null;
   }
+}
+
+function clampNumber(value: unknown, min: number, max: number): number {
+  const num =
+    typeof value === "number" ? value : Number.isFinite(Number(value)) ? Number(value) : min;
+  return Math.min(max, Math.max(min, num));
+}
+
+function defaultJurors(): CaseFile["jurors"] {
+  return [
+    { persona: "PM", priority: 3, rationale: "Moderate impact" },
+    { persona: "Support", priority: 3, rationale: "Common support issue" },
+    { persona: "Eng", priority: 3, rationale: "Needs investigation" },
+    { persona: "Design", priority: 3, rationale: "Possible UX gap" },
+    { persona: "Security", priority: 3, rationale: "No immediate risk" }
+  ];
+}
+
+function computePriorityScore(
+  urgency: number,
+  sentiment: number,
+  jurors: CaseFile["jurors"],
+  similarCount: number
+): number {
+  const jurorAverage =
+    jurors.reduce((sum, juror) => sum + juror.priority, 0) / jurors.length;
+  const repeatMultiplier =
+    similarCount >= 5 ? 20 : similarCount >= 3 ? 12 : similarCount >= 1 ? 6 : 0;
+  const score = urgency * 15 + Math.abs(sentiment) * 10 + jurorAverage * 10 + repeatMultiplier;
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 function validateCaseFile(
@@ -247,16 +174,6 @@ function validateCaseFile(
   };
 }
 
-function defaultJurors(): CaseFile["jurors"] {
-  return [
-    { persona: "PM", priority: 3, rationale: "Moderate impact" },
-    { persona: "Support", priority: 3, rationale: "Common support issue" },
-    { persona: "Eng", priority: 3, rationale: "Needs investigation" },
-    { persona: "Design", priority: 3, rationale: "Possible UX gap" },
-    { persona: "Security", priority: 3, rationale: "No immediate risk" }
-  ];
-}
-
 function fallbackCaseFile(
   evidence: EvidencePayload,
   similarCount: number,
@@ -279,24 +196,43 @@ function fallbackCaseFile(
   };
 }
 
-function clampNumber(value: unknown, min: number, max: number): number {
-  const num =
-    typeof value === "number" ? value : Number.isFinite(Number(value)) ? Number(value) : min;
-  return Math.min(max, Math.max(min, num));
-}
-
-function computePriorityScore(
-  urgency: number,
-  sentiment: number,
-  jurors: CaseFile["jurors"],
+async function generateCaseFile(
+  env: Env,
+  evidence: EvidencePayload,
   similarCount: number
-): number {
-  const jurorAverage =
-    jurors.reduce((sum, juror) => sum + juror.priority, 0) / jurors.length;
-  const repeatMultiplier =
-    similarCount >= 5 ? 20 : similarCount >= 3 ? 12 : similarCount >= 1 ? 6 : 0;
-  const score = urgency * 15 + Math.abs(sentiment) * 10 + jurorAverage * 10 + repeatMultiplier;
-  return Math.max(0, Math.min(100, Math.round(score)));
+): Promise<CaseFile> {
+  const prompt = buildPrompt(evidence);
+  let attempt = 0;
+  let lastError: string | null = null;
+  while (attempt < 3) {
+    attempt += 1;
+    try {
+      const response = (await env.AI.run(
+        "@cf/meta/llama-3.1-8b-instruct",
+        {
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a product analyst. Return JSON only that matches the schema."
+            },
+            { role: "user", content: prompt }
+          ],
+          max_tokens: 700
+        }
+      )) as { response?: string };
+      const raw = typeof response?.response === "string" ? response.response : "";
+      const parsed = safeJsonParse(raw);
+      const validated = validateCaseFile(parsed, similarCount);
+      if (validated) {
+        return validated;
+      }
+      lastError = "AI output did not match schema";
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : "AI error";
+    }
+  }
+  return fallbackCaseFile(evidence, similarCount, lastError ?? "AI failed");
 }
 
 async function resolveCluster(
@@ -321,4 +257,34 @@ async function resolveCluster(
   }
 
   return ensureCluster(env.DB, caseFile.cluster_hint, existingClusterId);
+}
+
+export async function processFeedbackInline(
+  env: Env,
+  feedbackId: string
+): Promise<void> {
+  try {
+    await updateFeedbackStatus(env.DB, feedbackId, "processing");
+
+    const evidence = await loadEvidence(env, feedbackId);
+    const similar = await findSimilar(env, evidence.text);
+    const caseFile = await generateCaseFile(env, evidence, similar.length);
+    const clusterId = await resolveCluster(env, caseFile, similar);
+
+    for (const result of similar) {
+      await insertSimilarityEdge(env.DB, feedbackId, result.id, result.score);
+    }
+    await insertCaseFile(env.DB, feedbackId, caseFile, clusterId);
+    await insertClusterMember(env.DB, clusterId, feedbackId, similar[0]?.score);
+    await updateFeedbackStatus(env.DB, feedbackId, "ready");
+  } catch (error) {
+    await updateFeedbackStatus(
+      env.DB,
+      feedbackId,
+      "failed",
+      "process_error",
+      error instanceof Error ? error.message : "Processing error"
+    );
+    throw error;
+  }
 }
