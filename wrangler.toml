@@ -9,19 +9,20 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "ffl_db"
-database_id = ""
+database_id = "0d50bfc8-21c0-4956-8571-317773d1f03d"
 
 [[r2_buckets]]
 binding = "EVIDENCE_BUCKET"
 bucket_name = "ffl-evidence"
 
-ai = { binding = "AI" }
+[ai]
+binding = "AI"
 
 [[workflows]]
 name = "analyze-feedback"
 binding = "FFL_WORKFLOW"
 class_name = "AnalyzeFeedbackWorkflow"
 
-[[ai_search]]
-binding = "AI_SEARCH"
-index_name = "ffl-feedback"
+# AI Search is configured via the Cloudflare Dashboard
+# The binding is available as env.AI_SEARCH in Workers
+# Note: AI Search bindings may require dashboard configuration
