@@ -1,5 +1,4 @@
-import { WorkflowEntrypoint, WorkflowStep } from "cloudflare:workflows";
-import { CaseFile, Env, EvidencePayload } from "../types";
+import type { CaseFile, Env, EvidencePayload } from "../types";
 import {
   ensureCluster,
   insertCaseFile,
@@ -12,10 +11,14 @@ interface WorkflowEvent<T> {
   payload: T;
 }
 
-export class AnalyzeFeedbackWorkflow extends WorkflowEntrypoint<
-  Env,
-  { feedbackId: string }
-> {
+interface WorkflowStep {
+  do: <T>(name: string, fn: () => Promise<T> | T) => Promise<T>;
+  sleep: (ms: number) => Promise<void>;
+}
+
+export class AnalyzeFeedbackWorkflow {
+  constructor(private env: Env) {}
+  
   async run(event: WorkflowEvent<{ feedbackId: string }>, step: WorkflowStep) {
     const feedbackId = event.payload.feedbackId;
     try {
