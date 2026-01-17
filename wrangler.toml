@@ -1,0 +1,27 @@
+name = "ffl"
+main = "src/worker.ts"
+compatibility_date = "2025-01-01"
+
+[assets]
+directory = "./frontend/dist"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ffl_db"
+database_id = ""
+
+[[r2_buckets]]
+binding = "EVIDENCE_BUCKET"
+bucket_name = "ffl-evidence"
+
+ai = { binding = "AI" }
+
+[[workflows]]
+name = "analyze-feedback"
+binding = "FFL_WORKFLOW"
+class_name = "AnalyzeFeedbackWorkflow"
+
+[[ai_search]]
+binding = "AI_SEARCH"
+index_name = "ffl-feedback"
