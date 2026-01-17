@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { fetchDashboard, ingestFeedback, searchFeedback } from "../api";
 import type { DashboardResponse, SearchResponse } from "../types";
 import {
@@ -154,7 +155,7 @@ export function Dashboard() {
               <p className="muted" style={{ padding: "0.5rem" }}>No results found.</p>
             )}
             {searchResults.results.map((result) => (
-              <a className="list-item" key={result.id} href={`/case/${result.id}`}>
+              <Link className="list-item" key={result.id} to={`/case/${result.id}`}>
                 <div>
                   <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem" }}>
                     <span className={`badge badge-small ${getSourceColor(result.source)}`}>
@@ -176,7 +177,7 @@ export function Dashboard() {
                     {result.priority_score}
                   </span>
                 )}
-              </a>
+              </Link>
             ))}
           </div>
         )}
@@ -231,7 +232,7 @@ export function Dashboard() {
           ) : (
             <div className="list">
               {dashboard.topClusters.map((cluster) => (
-                <a className="list-item" key={cluster.id} href={`/cluster/${cluster.id}`}>
+                <Link className="list-item" key={cluster.id} to={`/cluster/${cluster.id}`}>
                   <div>
                     <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem", flexWrap: "wrap" }}>
                       <strong>{cluster.label}</strong>
@@ -245,7 +246,7 @@ export function Dashboard() {
                       {cluster.top_priority}
                     </span>
                   )}
-                </a>
+                </Link>
               ))}
               {dashboard.topClusters.length === 0 && (
                 <p className="muted" style={{ padding: "0.5rem" }}>No clusters yet.</p>
@@ -263,7 +264,7 @@ export function Dashboard() {
           ) : (
             <div className="list">
               {dashboard.topCases.map((item) => (
-                <a className="list-item" key={item.id} href={`/case/${item.id}`}>
+                <Link className="list-item" key={item.id} to={`/case/${item.id}`}>
                   <div>
                     <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem", flexWrap: "wrap" }}>
                       <span className={`badge badge-small ${getSourceColor(item.source)}`}>
@@ -295,7 +296,7 @@ export function Dashboard() {
                       </span>
                     )}
                   </div>
-                </a>
+                </Link>
               ))}
               {dashboard.topCases.length === 0 && (
                 <p className="muted" style={{ padding: "0.5rem" }}>No cases yet.</p>
