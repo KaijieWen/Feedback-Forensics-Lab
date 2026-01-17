@@ -81,6 +81,7 @@ See [`docs/deployment.md`](docs/deployment.md) for detailed deployment instructi
 
 - [`docs/architecture.md`](docs/architecture.md) - System architecture and design
 - [`docs/deployment.md`](docs/deployment.md) - Detailed deployment guide
+- [`docs/ai-search-setup.md`](docs/ai-search-setup.md) - **AI Search configuration guide**
 - [`docs/runbook.md`](docs/runbook.md) - Operations and troubleshooting
 - [`docs/bindings.md`](docs/bindings.md) - Cloudflare bindings setup
 - [`docs/friction-log.md`](docs/friction-log.md) - Build experience notes

@@ -5,6 +5,8 @@ export interface DashboardCase {
   status: string;
   priority_score?: number | null;
   cluster_id?: string | null;
+  category?: string | null;
+  urgency?: number | null;
 }
 
 export interface DashboardCluster {
@@ -62,6 +64,8 @@ export interface SearchResponse {
     snippet: string;
     source: string;
     status: string;
+    category?: string | null;
+    priority_score?: number | null;
   }>;
   matches?: Array<{ id: string; score: number | null }>;
 }

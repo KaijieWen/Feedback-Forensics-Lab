@@ -1,7 +1,34 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { fetchCase } from "../api";
 import type { CaseResponse } from "../types";
+import {
+  getStatusColor,
+  getSourceColor,
+  getCategoryColor,
+  getPriorityColor,
+  getUrgencyColor,
+  getSentimentColor,
+  formatShortId
+} from "../utils/badges";
+
+interface CaseFileData {
+  summary?: string;
+  category?: "bug" | "confusion" | "feature" | "praise" | "other";
+  sentiment?: number;
+  urgency?: number;
+  product_area?: string;
+  repro_steps_md?: string;
+  clarifying_question?: string;
+  jurors?: Array<{
+    persona: string;
+    priority: number;
+    rationale: string;
+  }>;
+  keywords?: string[];
+  cluster_hint?: string;
+  priority_score?: number;
+}
 
 export function CaseDetail() {
   const { id } = useParams();
@@ -52,71 +79,207 @@ export function CaseDetail() {
     );
   }
 
-  const caseJson = data.caseFile?.case_json as Record<string, unknown> | undefined;
+  const caseJson = (data.caseFile?.case_json as CaseFileData | undefined) || {};
+  const caseFile = data.caseFile;
 
   return (
     <div className="page">
       <header className="page-header">
         <div>
-          <h1>Case {data.feedback.id}</h1>
-          <p className="muted">{data.feedback.snippet}</p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+            <h1 style={{ margin: 0 }}>Case {formatShortId(data.feedback.id)}</h1>
+            <span className={`badge ${getSourceColor(data.feedback.source)}`}>
+              {data.feedback.source.replace(/_/g, " ")}
+            </span>
+            <span className={`badge ${getStatusColor(data.feedback.status)}`}>
+              {data.feedback.status}
+            </span>
+            {caseJson.category && (
+              <span className={`badge ${getCategoryColor(caseJson.category)}`}>
+                {caseJson.category}
+              </span>
+            )}
+            {caseJson.urgency !== undefined && (
+              <span className={`badge ${getUrgencyColor(caseJson.urgency)}`}>
+                Urgency: {caseJson.urgency}/5
+              </span>
+            )}
+            {caseFile && (
+              <span className={`badge ${getPriorityColor(caseFile.priority_score)}`}>
+                Priority: {caseFile.priority_score}
+              </span>
+            )}
+          </div>
+          {data.feedback.title && (
+            <h2 style={{ fontSize: "1.1rem", margin: "0.5rem 0", fontWeight: 600 }}>
+              {data.feedback.title}
+            </h2>
+          )}
+          <p className="muted" style={{ marginTop: "0.5rem" }}>
+            {data.feedback.snippet}
+          </p>
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "0.75rem", flexWrap: "wrap", fontSize: "0.8rem" }}>
+            <span className="muted">Created: {new Date(data.feedback.created_at).toLocaleString()}</span>
+            {caseFile && (
+              <span className="muted">Updated: {new Date(caseFile.updated_at).toLocaleString()}</span>
+            )}
+          </div>
         </div>
-        <span className={`status ${data.feedback.status}`}>
-          {data.feedback.status}
-        </span>
       </header>
 
-      <section className="card">
-        <h2>Case file</h2>
-        {data.caseFile ? (
-          <div className="grid two-col">
-            <div>
-              <p>
-                <strong>Priority</strong>: {data.caseFile.priority_score}
-              </p>
-              <p>
-                <strong>Cluster</strong>:{" "}
-                {data.caseFile.cluster_id ? (
-                  <a href={`/cluster/${data.caseFile.cluster_id}`}>
-                    {data.caseFile.cluster_id}
-                  </a>
-                ) : (
-                  "Unassigned"
+      {caseFile && (
+        <>
+          <section className="card">
+            <h2>Analysis Summary</h2>
+            <div className="grid two-col">
+              <div>
+                <div className="badge-group" style={{ marginBottom: "1rem" }}>
+                  {caseJson.category && (
+                    <span className={`badge ${getCategoryColor(caseJson.category)}`}>
+                      {caseJson.category}
+                    </span>
+                  )}
+                  {caseJson.urgency !== undefined && (
+                    <span className={`badge ${getUrgencyColor(caseJson.urgency)}`}>
+                      U{caseJson.urgency}
+                    </span>
+                  )}
+                  {caseJson.sentiment !== undefined && (
+                    <span className={`badge ${getSentimentColor(caseJson.sentiment)}`}>
+                      {caseJson.sentiment > 0.2 ? "Positive" : caseJson.sentiment < -0.2 ? "Negative" : "Neutral"}
+                    </span>
+                  )}
+                  <span className={`badge ${getPriorityColor(caseFile.priority_score)}`}>
+                    Priority: {caseFile.priority_score}
+                  </span>
+                </div>
+                
+                {caseJson.summary && (
+                  <div className="info-box" style={{ marginBottom: "0.75rem" }}>
+                    <strong style={{ display: "block", marginBottom: "0.25rem" }}>Summary:</strong>
+                    {caseJson.summary}
+                  </div>
                 )}
-              </p>
-              <p className="muted">Updated {data.caseFile.updated_at}</p>
+
+                {caseJson.product_area && (
+                  <p style={{ margin: "0.5rem 0", fontSize: "0.85rem" }}>
+                    <strong>Product Area:</strong> {caseJson.product_area}
+                  </p>
+                )}
+
+                {caseFile.cluster_id && (
+                  <p style={{ margin: "0.5rem 0", fontSize: "0.85rem" }}>
+                    <strong>Cluster:</strong>{" "}
+                    <Link to={`/cluster/${caseFile.cluster_id}`} style={{ color: "#60a5fa" }}>
+                      {formatShortId(caseFile.cluster_id)}
+                    </Link>
+                  </p>
+                )}
+
+                {caseJson.keywords && caseJson.keywords.length > 0 && (
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <strong style={{ fontSize: "0.8rem", display: "block", marginBottom: "0.5rem" }}>Keywords:</strong>
+                    <div className="badge-group">
+                      {caseJson.keywords.map((keyword, idx) => (
+                        <span key={idx} className="badge badge-small badge-source-email">
+                          {keyword}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {caseJson.jurors && caseJson.jurors.length > 0 && (
+                <div>
+                  <strong style={{ fontSize: "0.85rem", display: "block", marginBottom: "0.5rem" }}>Juror Votes:</strong>
+                  <div className="list">
+                    {caseJson.jurors.map((juror, idx) => (
+                      <div key={idx} className="info-box" style={{ padding: "0.625rem" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                          <span style={{ fontSize: "0.8rem", fontWeight: 600 }}>{juror.persona}</span>
+                          <span className={`badge badge-small ${getPriorityColor(juror.priority * 20)}`}>
+                            P{juror.priority}/5
+                          </span>
+                        </div>
+                        <p className="muted" style={{ fontSize: "0.75rem", margin: 0 }}>
+                          {juror.rationale}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-            <div>
-              <pre className="code-block">
-                {JSON.stringify(caseJson, null, 2)}
-              </pre>
-            </div>
+          </section>
+
+          {caseJson.repro_steps_md && (
+            <section className="card">
+              <h2>Reproduction Steps</h2>
+              <div className="info-box warning">
+                <div style={{ whiteSpace: "pre-wrap", fontSize: "0.85rem" }}>
+                  {caseJson.repro_steps_md}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {caseJson.clarifying_question && (
+            <section className="card">
+              <h2>Clarifying Question</h2>
+              <div className="info-box">
+                <strong>Question:</strong> {caseJson.clarifying_question}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {!caseFile && (
+        <section className="card">
+          <div className="info-box warning">
+            Case file is still being processed. Status: <span className={`badge badge-small ${getStatusColor(data.feedback.status)}`}>
+              {data.feedback.status}
+            </span>
           </div>
-        ) : (
-          <p className="muted">Case file not ready yet.</p>
-        )}
-      </section>
+        </section>
+      )}
 
       <section className="card">
-        <h2>Similar evidence</h2>
+        <h2>Similar Evidence ({data.similar.length})</h2>
         {data.similar.length === 0 ? (
-          <p className="muted">No similar feedback found yet.</p>
+          <p className="muted" style={{ padding: "0.5rem" }}>No similar feedback found yet.</p>
         ) : (
           <div className="list">
             {data.similar.map((item) => (
-              <a key={item.id} className="list-item" href={`/case/${item.id}`}>
+              <Link key={item.id} className="list-item" to={`/case/${item.id}`}>
                 <div>
-                  <strong>{item.id}</strong>
-                  <p className="muted">{item.snippet ?? "No snippet"}</p>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.25rem", flexWrap: "wrap" }}>
+                    <strong className="font-mono">{formatShortId(item.id)}</strong>
+                    {item.score !== null && item.score !== undefined && (
+                      <span className="badge badge-small badge-similarity">
+                        {Math.round(item.score * 100)}% match
+                      </span>
+                    )}
+                    {item.priority_score !== null && (
+                      <span className={`badge badge-small ${getPriorityColor(item.priority_score)}`}>
+                        {item.priority_score}
+                      </span>
+                    )}
+                  </div>
+                  <p className="muted text-truncate">{item.snippet ?? "No snippet available"}</p>
                 </div>
-                <span className="pill">
-                  {item.score ? item.score.toFixed(2) : "-"}
-                </span>
-              </a>
+              </Link>
             ))}
           </div>
         )}
       </section>
+
+      <div style={{ marginTop: "1rem", textAlign: "center" }}>
+        <Link to="/" style={{ color: "#60a5fa", fontSize: "0.85rem" }}>
+          ← Back to Dashboard
+        </Link>
+      </div>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 #root {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 3rem;
+  padding: 1.5rem 1.25rem 2rem;
 }
 
 .page-header {
@@ -9,20 +9,32 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header > div {
+  flex: 1;
+  min-width: 0;
 }
 
 .card {
   background: #111828;
   border: 1px solid #1f2937;
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.card h2 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .grid {
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .two-col {
@@ -36,57 +48,243 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .list-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.75rem 1rem;
-  border-radius: 12px;
+  gap: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
   border: 1px solid #1f2937;
   background: #0b1220;
   text-decoration: none;
   color: inherit;
+  transition: border-color 0.2s, background 0.2s;
 }
 
 .list-item:hover {
   border-color: #334155;
+  background: #0f1729;
+}
+
+.list-item > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.list-item strong {
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.25rem;
 }
 
 .muted {
   color: #9ca3af;
-  font-size: 0.9rem;
-}
-
-.pill {
-  background: #1f2937;
-  padding: 0.25rem 0.75rem;
-  border-radius: 999px;
   font-size: 0.8rem;
+  line-height: 1.4;
 }
 
-.status {
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.6rem;
+/* Badge Base Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  background: #1f2937;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.status.ready {
-  background: #14532d;
+.badge-small {
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
 }
 
-.status.processing {
-  background: #1f2937;
+.badge-large {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
 }
 
-.status.failed {
-  background: #7f1d1d;
+/* Status Badges */
+.badge-status-ready {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-status-processing {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-status-queued {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.badge-status-failed {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-status-default {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Source Badges */
+.badge-source-github {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.badge-source-discord {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.badge-source-support-ticket {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-source-twitter {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+.badge-source-email {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.badge-source-forum {
+  background: rgba(251, 146, 60, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+/* Category Badges */
+.badge-category-bug {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-category-feature {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.badge-category-confusion {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-category-praise {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-category-other {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Priority Badges */
+.badge-priority-high {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-priority-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-priority-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Urgency Badges (1-5) */
+.badge-urgency-1 {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-urgency-2 {
+  background: rgba(101, 163, 13, 0.15);
+  color: #84cc16;
+  border: 1px solid rgba(101, 163, 13, 0.3);
+}
+
+.badge-urgency-3 {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.badge-urgency-4 {
+  background: rgba(249, 115, 22, 0.15);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.badge-urgency-5 {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+/* Sentiment Badges */
+.badge-sentiment-positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-sentiment-negative {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.badge-sentiment-neutral {
+  background: rgba(107, 114, 128, 0.15);
+  color: #9ca3af;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+/* Similarity Score Badge */
+.badge-similarity {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  border: 1px solid rgba(139, 92, 246, 0.3);
 }
 
 .search-row {
@@ -95,10 +293,161 @@
   align-items: center;
 }
 
+.search-row input {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  border: 1px solid #1f2937;
+  background: #0b1220;
+  color: inherit;
+  font-size: 0.875rem;
+}
+
 .code-block {
   background: #0b1220;
-  padding: 1rem;
-  border-radius: 12px;
+  padding: 0.875rem;
+  border-radius: 8px;
   overflow-x: auto;
+  font-size: 0.8rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  border: 1px solid #1f2937;
+}
+
+/* Metrics Summary */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.metric-item {
+  padding: 0.625rem;
+  background: #0b1220;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.metric-item .metric-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #60a5fa;
+  display: block;
+}
+
+.metric-item .metric-label {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  margin-top: 0.25rem;
+}
+
+/* Badge Group */
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+/* Info Box */
+.info-box {
+  padding: 0.75rem;
+  background: #0b1220;
+  border: 1px solid #1f2937;
+  border-left: 3px solid #60a5fa;
+  border-radius: 8px;
+  margin: 0.5rem 0;
   font-size: 0.85rem;
+}
+
+.info-box.warning {
+  border-left-color: #fbbf24;
+}
+
+.info-box.success {
+  border-left-color: #34d399;
+}
+
+.info-box.error {
+  border-left-color: #fca5a5;
+}
+
+/* Compact Form */
+.compact-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.compact-form label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.375rem;
+}
+
+.compact-form input,
+.compact-form textarea,
+.compact-form select {
+  width: 100%;
+  padding: 0.5rem 0.625rem;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  background: #0b1220;
+  color: inherit;
+  font-size: 0.85rem;
+}
+
+.compact-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Table-like compact view */
+.compact-table {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.compact-table-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #1f2937;
+  background: #0b1220;
+  transition: border-color 0.2s;
+}
+
+.compact-table-row:hover {
+  border-color: #334155;
+}
+
+.compact-table-row > div:first-child {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  min-width: 80px;
+}
+
+.compact-table-row > div:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Utility classes */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.font-mono {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
 }
